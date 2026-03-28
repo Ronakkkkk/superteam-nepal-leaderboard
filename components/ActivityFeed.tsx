@@ -45,6 +45,7 @@ const DEPTH = [
   { opacity: 0.4,  scale: 0.88, shadow: undefined },
 ] as const
 
+
 function xpColor(amount: number): string {
   if (amount >= 500) return '#FFD700'
   if (amount >= 200) return '#14F195'
@@ -75,7 +76,7 @@ export function ActivityFeed() {
   }, [])
 
   return (
-    <div className="max-w-xl">
+    <div>
       {/* Shimmer keyframe for top emoji */}
       <style>{`
         @keyframes feed-shimmer {
@@ -140,7 +141,7 @@ export function ActivityFeed() {
                   style={{
                     background:      isTop ? 'rgba(255,255,255,0.08)' : '#111111',
                     borderColor:     'rgba(255,255,255,0.06)',
-                    borderLeftColor: accentColor,
+                    borderLeftColor: isTop ? accentColor : 'rgba(255,255,255,0.06)',
                     borderLeftWidth: '2px',
                     boxShadow:       depth.shadow ?? (isTop ? '0 4px 24px rgba(0,0,0,0.45)' : undefined),
                     zIndex:          5 - i,

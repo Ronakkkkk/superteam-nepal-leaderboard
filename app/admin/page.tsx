@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, CheckCircle, XCircle, Eye, EyeOff, Trash2, Plus, Award, Users, Clock, Pencil } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, Trash2, Plus, Award, Users, Clock, Pencil } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { avatarUrl } from '@/components/UserRow'
 
 /* ── Types ─────────────────────────────────────────────────────── */
@@ -41,9 +42,6 @@ const CATEGORIES = [
 ] as const
 
 const ALL_SKILLS = ['Development', 'Design', 'Marketing', 'Content', 'Community', 'Operations', 'Strategy'] as const
-
-const ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY ?? ''
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD ?? ''
 
 /* ── Relative time helper ───────────────────────────────────────── */
 function timeAgo(dateStr: string): string {
@@ -195,7 +193,7 @@ function EditModal({ ambassador, onSave, onCancel, toast }: {
       updates.skills = skills
       const res = await fetch('/api/ambassadors', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       })
       const json = await res.json()
@@ -342,105 +340,16 @@ function ConfirmDialog({ name, onConfirm, onCancel }: { name: string; onConfirm:
   )
 }
 
-/* ── Password Gate ──────────────────────────────────────────────── */
-function PasswordGate({ onAuth }: { onAuth: () => void }) {
-  const [pw, setPw]         = useState('')
-  const [show, setShow]     = useState(false)
-  const [shake, setShake]   = useState(false)
-  const [error, setError]   = useState(false)
-
-  function attempt() {
-    if (pw === ADMIN_PASSWORD) {
-      sessionStorage.setItem('admin_authed', '1')
-      onAuth()
-    } else {
-      setError(true)
-      setShake(true)
-      setTimeout(() => setShake(false), 600)
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
-      <motion.div
-        animate={shake ? { x: [-8, 8, -6, 6, -3, 3, 0] } : { x: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-sm"
-      >
-        <div className="rounded-2xl border border-white/[0.07] overflow-hidden"
-             style={{ background: '#0d0d0d' }}>
-          {/* Top accent */}
-          <div className="h-[2px] bg-[#DC143C]" />
-          <div className="px-8 py-8">
-            {/* Logo */}
-            <div className="flex flex-col items-center mb-8">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/superteam-logo.png" alt="Superteam" className="h-10 w-auto object-contain mb-3"
-                onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
-              <p className="font-archivo font-bold text-sm text-[#DC143C] tracking-wide"
-                 style={{ fontStretch: 'semi-expanded' }}>Admin Panel</p>
-            </div>
-            <div className="space-y-3">
-              <div className="relative">
-                <input
-                  type={show ? 'text' : 'password'}
-                  placeholder="Enter admin password"
-                  value={pw}
-                  onChange={e => { setPw(e.target.value); setError(false) }}
-                  onKeyDown={e => e.key === 'Enter' && attempt()}
-                  className={`w-full bg-white/[0.04] border rounded-lg px-3 py-2.5 pr-10 text-sm
-                    text-white/80 placeholder:text-white/25 outline-none font-sans transition-colors
-                    ${error ? 'border-[#DC143C]/50 focus:border-[#DC143C]/70' : 'border-white/[0.1] focus:border-[#DC143C]/40'}`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShow(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
-                >
-                  {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <AnimatePresence>
-                {error && (
-                  <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="text-[12px] text-[#ff6b6b] font-sans">
-                    Incorrect password. Try again.
-                  </motion.p>
-                )}
-              </AnimatePresence>
-              <button
-                onClick={attempt}
-                className="w-full py-2.5 rounded-lg text-sm font-semibold font-sans text-white transition-all duration-150
-                           hover:shadow-[0_0_20px_rgba(220,20,60,0.4)]"
-                style={{ background: 'linear-gradient(135deg,#b50f30,#DC143C)' }}
-              >
-                Enter Admin
-              </button>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
 /* ══════════════════════════════════════════════════════════════════
    MAIN ADMIN PAGE
 ══════════════════════════════════════════════════════════════════ */
 export default function AdminPage() {
-  const [authed, setAuthed]           = useState(false)
-  const [checking, setChecking]       = useState(true)
-  const [ambassadors, setAmbassadors] = useState<Ambassador[]>([])
+  const router = useRouter()
+  const [ambassadors, setAmbassadors]   = useState<Ambassador[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [deleteTarget, setDeleteTarget] = useState<Ambassador | null>(null)
   const [editTarget, setEditTarget]     = useState<Ambassador | null>(null)
   const { toasts, show: toast, remove: removeToast } = useToast()
-
-  // Check session on mount
-  useEffect(() => {
-    if (sessionStorage.getItem('admin_authed') === '1') setAuthed(true)
-    setChecking(false)
-  }, [])
 
   const fetchAll = useCallback(async () => {
     const [ambRes, txRes] = await Promise.all([
@@ -451,10 +360,7 @@ export default function AdminPage() {
     if (txRes.ok)   setTransactions((await txRes.json()).data ?? [])
   }, [])
 
-  useEffect(() => { if (authed) fetchAll() }, [authed, fetchAll])
-
-  if (checking) return null
-  if (!authed)  return <PasswordGate onAuth={() => setAuthed(true)} />
+  useEffect(() => { fetchAll() }, [fetchAll])
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white pb-20">
@@ -476,7 +382,7 @@ export default function AdminPage() {
             setDeleteTarget(null)
             const res = await fetch('/api/ambassadors', {
               method: 'DELETE',
-              headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ ambassador_id: target.id }),
             })
             const json = await res.json()
@@ -503,7 +409,10 @@ export default function AdminPage() {
           </span>
           <div className="ml-auto">
             <button
-              onClick={() => { sessionStorage.removeItem('admin_authed'); setAuthed(false) }}
+              onClick={async () => {
+                await fetch('/api/admin/logout', { method: 'POST' })
+                router.push('/admin/login')
+              }}
               className="text-[11px] font-sans text-white/25 hover:text-white/60 transition-colors"
             >
               Sign out
@@ -643,7 +552,7 @@ function AwardXpSection({ ambassadors, onSuccess, toast }: {
     try {
       const res = await fetch('/api/xp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ambassador_id: selectedId,
           amount: Number(amount),
@@ -773,7 +682,7 @@ function AddAmbassadorSection({ onSuccess, toast }: {
     try {
       const res = await fetch('/api/ambassadors', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username.trim(), avatar_url: avatarUrl.trim() || null, skills }),
       })
       const json = await res.json()

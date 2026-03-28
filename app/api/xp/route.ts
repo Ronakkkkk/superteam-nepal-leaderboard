@@ -5,8 +5,9 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   // Auth check
-  const adminKey = request.headers.get('x-admin-key')
-  if (!adminKey || adminKey !== process.env.ADMIN_SECRET_KEY) {
+  const session = request.cookies.get('admin_session')
+  const secret  = process.env.ADMIN_SECRET_KEY
+  if (!session || !secret || session.value !== secret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

@@ -222,11 +222,13 @@ export function LeaderboardTable({ initialData }: { initialData: Ambassador[] })
 
   useEffect(() => { setCurrentUser(localStorage.getItem('currentUser')) }, [])
 
-  /* Confetti on first load */
+  /* Confetti on first load — once per session only */
   useEffect(() => {
     if (!hasLoaded || confettiFired.current || data.length === 0) return
+    if (sessionStorage.getItem('confetti_fired')) return
     confettiFired.current = true
-    confetti({ particleCount: 80, spread: 60, colors: ['#DC143C', '#FFD700', '#FFFFFF'], origin: { x: 0.5, y: 0.05 } })
+    sessionStorage.setItem('confetti_fired', '1')
+    confetti({ particleCount: 80, spread: 60, colors: ['#DC143C', '#FFD700', '#FFFFFF'], origin: { x: 0.5, y: 0.45 } })
   }, [hasLoaded, data.length])
 
   /* ⌘K */
@@ -529,7 +531,7 @@ export function LeaderboardTable({ initialData }: { initialData: Ambassador[] })
         )}
 
         {/* Activity Feed */}
-        <div className="mt-8">
+        <div className="mt-10 max-w-2xl mx-auto px-4 sm:px-0">
           <ActivityFeed />
         </div>
       </main>

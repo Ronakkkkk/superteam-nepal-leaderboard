@@ -33,7 +33,13 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: "Superteam Nepal — Ambassador Leaderboard",
   description:
-    "Track XP, skills, and contributions of Superteam Nepal ambassadors building Nepal's Web3 future.",
+    "Track XP and contributions of Superteam Nepal ambassadors. Built for the Nepali Web3 community.",
+  openGraph: {
+    title: "Superteam Nepal — Ambassador Leaderboard",
+    description:
+      "Track XP and contributions of Superteam Nepal ambassadors. Built for the Nepali Web3 community.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
